@@ -143,7 +143,6 @@
 
 // ⭐ 여기에 설정값 입력
 const CLIENT_ID     = 'nti3kkmh2c';
-const CLIENT_SECRET = 'i1Q9NS6NJqRpMeg2RkUxmGMl7V8csq2UiAiV5Y2b';
 const 시트주소 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTs6k1Ky8Hdnrl2U5A242Vg6ZqBaQSrLGkDr2xf_yMuMflYc-dD_2-v-2wRmIsip32W087DXCx4ZRzu/pub?gid=0&single=true&output=csv';
 
 let 전체데이터 = [];
@@ -337,64 +336,48 @@ function 마커찍기(좌표, 라벨, 색) {
 async function 경로계산(행) {
   const 경유배열 = 행.경유목록.filter(w => w.includes(','));
 
-  const 시도목록 = [
-    { base: 'https://maps.apigw.ntruss.com',         api: 'map-direction-15', 최대: 15, 구분자: '|' },
-    { base: 'https://naveropenapi.apigw.ntruss.com', api: 'map-direction-15', 최대: 15, 구분자: '|' },
-    { base: 'https://maps.apigw.ntruss.com',         api: 'map-direction',    최대: 5,  구분자: ':' },
-    { base: 'https://naveropenapi.apigw.ntruss.com', api: 'map-direction',    최대: 5,  구분자: ':' },
-  ];
-
-  for (const { base, api, 최대, 구분자 } of 시도목록) {
-    try {
-      const wp = 경유배열.slice(0, 최대).join(구분자);
-      let url = `${base}/${api}/v1/driving?start=${행.시작}&goal=${행.종료}`;
-      if (wp) url += `&waypoints=${wp}`;
-      url += `&option=trafast`;
-
-      const res = await fetch(url, {
-        headers: {
-          'X-NCP-APIGW-API-KEY-ID': CLIENT_ID,
-          'X-NCP-APIGW-API-KEY': CLIENT_SECRET
-        }
-      });
-      const data = await res.json();
-      const 반영수 = data.route?.trafast?.[0]?.summary?.waypoints?.length || 0;
-      console.log(`[${api}] code=${data.code} 경유 ${반영수}개 반영`);
-
-      if (data.code === 0 && data.route) {
-        const 경로 = data.route.trafast?.[0];
-        if (!경로?.path) continue;
-
-        // 실제 도로 경로 그리기
-        폴리라인 = new naver.maps.Polyline({
-          path: 경로.path.map(p => new naver.maps.LatLng(p[1], p[0])),
-          map: 지도객체,
-          strokeColor: '#1a73e8',
-          strokeWeight: 5,
-          strokeOpacity: 0.85
-        });
-
-        // 통계 업데이트
-        const s = 경로.summary || {};
-        const 거리m  = Number(s.distance) || 0;
-        const 시간ms = Number(s.duration) || 0;
-        document.getElementById('카드거리').textContent  = 거리m  > 0 ? (거리m / 1000).toFixed(1) : '-';
-        document.getElementById('카드시간').textContent  = 시간ms > 0 ? Math.round(시간ms / 60000) : '-';
-        document.getElementById('카드유류비').textContent = 숫자포맷(s.fuelPrice);
-        document.getElementById('카드톨비').textContent  = 숫자포맷(s.tollFare);
-        document.getElementById('카드속도').textContent  = (거리m > 0 && 시간ms > 0)
-          ? Math.round((거리m / 1000) / (시간ms / 3600000)) : '-';
-        return;
-      }
-    } catch(e) {
-      console.log(`[${api}] 오류:`, e.message);
+  try {
+    const res = await fetch('/api/directions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start: 행.시작,
+        goal: 행.종료,
+        waypoints: 경유배열.length > 0 ? 경유배열.join('|') : undefined
+      })
+    });
+    const data = await res.json();
+    const 경로 = data.route?.trafast?.[0];
+    if (!경로?.path) {
+      ['카드거리','카드시간','카드유류비','카드톨비','카드속도']
+        .forEach(id => document.getElementById(id).textContent = '-');
+      return;
     }
+
+    폴리라인 = new naver.maps.Polyline({
+      path: 경로.path.map(p => new naver.maps.LatLng(p[1], p[0])),
+      map: 지도객체,
+      strokeColor: '#1a73e8',
+      strokeWeight: 5,
+      strokeOpacity: 0.85
+    });
+
+    const s = 경로.summary || {};
+    const 거리m  = Number(s.distance) || 0;
+    const 시간ms = Number(s.duration) || 0;
+    document.getElementById('카드거리').textContent   = 거리m  > 0 ? (거리m / 1000).toFixed(1) : '-';
+    document.getElementById('카드시간').textContent   = 시간ms > 0 ? Math.round(시간ms / 60000) : '-';
+    document.getElementById('카드유류비').textContent  = 숫자포맷(s.fuelPrice);
+    document.getElementById('카드톨비').textContent   = 숫자포맷(s.tollFare);
+    document.getElementById('카드속도').textContent   = (거리m > 0 && 시간ms > 0)
+      ? Math.round((거리m / 1000) / (시간ms / 3600000)) : '-';
+
+  } catch(e) {
+    console.error('경로계산 오류:', e);
+    ['카드거리','카드시간','카드유류비','카드톨비','카드속도']
+      .forEach(id => document.getElementById(id).textContent = '-');
   }
-
-  ['카드거리','카드시간','카드유류비','카드톨비','카드속도']
-    .forEach(id => document.getElementById(id).textContent = '-');
 }
-
 </script>
 </body>
 </html>
