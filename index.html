@@ -6,9 +6,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #f0f2f5; font-family: 맑은고딕, sans-serif; padding: 20px; }
-    h1 { color: #333; font-size: 22px; margin-bottom: 4px; }
-    .부제 { color: #888; font-size: 13px; margin-bottom: 16px; }
+    body { background: #f0f2f5; font-family: 맑은고딕, sans-serif; }
+
+    /* 로그인 화면 */
+    #로그인화면 {
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+    }
+    .로그인박스 {
+      background: white; border-radius: 16px; padding: 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12); width: 340px;
+      text-align: center;
+    }
+    .로그인박스 h2 { color: #1a73e8; margin-bottom: 8px; font-size: 20px; }
+    .로그인박스 p { color: #888; font-size: 13px; margin-bottom: 24px; }
+    .입력그룹 { margin-bottom: 12px; text-align: left; }
+    .입력그룹 label { font-size: 12px; color: #555; font-weight: bold; display: block; margin-bottom: 4px; }
+    .입력그룹 input {
+      width: 100%; padding: 10px 14px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 14px; font-family: 맑은고딕, sans-serif;
+    }
+    .입력그룹 input:focus { outline: none; border-color: #1a73e8; }
+    .로그인버튼 {
+      width: 100%; padding: 12px; background: #1a73e8; color: white;
+      border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
+      margin-top: 8px; font-family: 맑은고딕, sans-serif;
+    }
+    .로그인버튼:hover { background: #1558b0; }
+    .오류메시지 { color: #e53935; font-size: 13px; margin-top: 10px; display: none; }
+    .비번변경링크 {
+      color: #1a73e8; font-size: 13px; cursor: pointer;
+      margin-top: 16px; display: block; text-decoration: underline;
+    }
+
+    /* 비밀번호 변경 모달 */
+    .모달배경 {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 999;
+      justify-content: center; align-items: center;
+    }
+    .모달배경.열림 { display: flex; }
+    .모달박스 {
+      background: white; border-radius: 16px; padding: 32px;
+      width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .모달박스 h3 { font-size: 16px; color: #333; margin-bottom: 20px; }
+    .모달버튼묶음 { display: flex; gap: 8px; margin-top: 16px; }
+    .모달버튼 {
+      flex: 1; padding: 10px; border: none; border-radius: 8px;
+      font-size: 14px; cursor: pointer; font-family: 맑은고딕, sans-serif;
+    }
+    .모달버튼.확인 { background: #1a73e8; color: white; }
+    .모달버튼.취소 { background: #f0f0f0; color: #555; }
+
+    /* 대시보드 */
+    #대시보드 { display: none; padding: 20px; }
+    .상단바 {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .상단바 h1 { color: #333; font-size: 22px; }
+    .상단바 .우측 { display: flex; gap: 8px; align-items: center; }
+    .사용자뱃지 {
+      background: #e8f0fe; color: #1a73e8; padding: 6px 14px;
+      border-radius: 20px; font-size: 13px; font-weight: bold;
+    }
+    .버튼 {
+      padding: 7px 14px; border: none; border-radius: 8px;
+      font-size: 13px; cursor: pointer; font-family: 맑은고딕, sans-serif;
+    }
+    .버튼.비번 { background: #f0f0f0; color: #555; }
+    .버튼.로그아웃 { background: #e53935; color: white; }
 
     .필터영역 {
       background: white; border-radius: 12px; padding: 16px 20px;
@@ -66,85 +134,141 @@
 </head>
 <body>
 
-<h1>🚗 CSM 운행경로 대시보드</h1>
-<p class="부제">날짜·부서·배송처·차량을 선택하면 실제 도로 경로와 통계를 확인할 수 있어요</p>
-
-<div class="필터영역">
-  <div class="필터그룹">
-    <label>📅 날짜</label>
-    <select id="sel날짜" onchange="날짜변경()"><option>불러오는 중...</option></select>
-  </div>
-  <div class="필터그룹">
-    <label>🏢 부서명</label>
-    <select id="sel부서" onchange="부서변경()"><option value="전체">전체</option></select>
-  </div>
-  <div class="필터그룹">
-    <label>📦 배송처</label>
-    <select id="sel배송처" onchange="배송처변경()"><option value="전체">전체</option></select>
-  </div>
-  <div class="필터그룹">
-    <label>🚛 차량유형</label>
-    <select id="sel차량" onchange="차량변경()"><option value="전체">전체</option></select>
-  </div>
-  <div class="필터그룹">
-    <label>👤 기사</label>
-    <select id="sel기사" onchange="기사변경()"><option>기사 선택</option></select>
+<!-- 로그인 화면 -->
+<div id="로그인화면">
+  <div class="로그인박스">
+    <h2>🚗 CSM TMS</h2>
+    <p>운행경로 대시보드</p>
+    <div class="입력그룹">
+      <label>아이디</label>
+      <input type="text" id="입력ID" placeholder="아이디를 입력하세요">
+    </div>
+    <div class="입력그룹">
+      <label>비밀번호</label>
+      <input type="password" id="입력PW" placeholder="비밀번호를 입력하세요"
+        onkeydown="if(event.key==='Enter') 로그인()">
+    </div>
+    <button class="로그인버튼" onclick="로그인()">로그인</button>
+    <div class="오류메시지" id="로그인오류">❌ 아이디 또는 비밀번호가 틀렸습니다</div>
   </div>
 </div>
 
-<div class="카드묶음">
-  <div class="카드">
-    <div class="숫자" id="카드거리">-</div>
-    <div class="설명">운행거리 (km)</div>
-    <div class="출처">Directions API</div>
-  </div>
-  <div class="카드">
-    <div class="숫자" id="카드시간">-</div>
-    <div class="설명">운행시간 (분)</div>
-    <div class="출처">Directions API</div>
-  </div>
-  <div class="카드">
-    <div class="숫자" id="카드건수">-</div>
-    <div class="설명">총 건수</div>
-  </div>
-  <div class="카드 빨강">
-    <div class="숫자" id="카드실패">-</div>
-    <div class="설명">실패 건</div>
-  </div>
-  <div class="카드 주황">
-    <div class="숫자" id="카드유류비">-</div>
-    <div class="설명">유류비 (원)</div>
-    <div class="출처">Directions API</div>
-  </div>
-  <div class="카드 주황">
-    <div class="숫자" id="카드톨비">-</div>
-    <div class="설명">톨비 (원)</div>
-    <div class="출처">Directions API</div>
-  </div>
-  <div class="카드 초록">
-    <div class="숫자" id="카드속도">-</div>
-    <div class="설명">평균속도 (km/h)</div>
-    <div class="출처">Directions API</div>
+<!-- 비밀번호 변경 모달 -->
+<div class="모달배경" id="비번모달">
+  <div class="모달박스">
+    <h3>🔑 비밀번호 변경</h3>
+    <div class="입력그룹">
+      <label>현재 비밀번호</label>
+      <input type="password" id="현재비번" placeholder="현재 비밀번호">
+    </div>
+    <div class="입력그룹">
+      <label>새 비밀번호</label>
+      <input type="password" id="새비번" placeholder="새 비밀번호">
+    </div>
+    <div class="입력그룹">
+      <label>새 비밀번호 확인</label>
+      <input type="password" id="새비번확인" placeholder="새 비밀번호 다시 입력">
+    </div>
+    <div class="오류메시지" id="비번오류" style="display:none"></div>
+    <div class="모달버튼묶음">
+      <button class="모달버튼 취소" onclick="비번모달닫기()">취소</button>
+      <button class="모달버튼 확인" onclick="비번변경()">변경하기</button>
+    </div>
   </div>
 </div>
 
-<div class="로딩바" id="로딩바">🔍 네이버 Directions API로 실제 경로 계산 중...</div>
-<div id="지도"></div>
+<!-- 대시보드 -->
+<div id="대시보드">
+  <div class="상단바">
+    <h1>🚗 CSM 운행경로 대시보드</h1>
+    <div class="우측">
+      <span class="사용자뱃지" id="사용자뱃지">-</span>
+      <button class="버튼 비번" onclick="비번모달열기()">🔑 비밀번호 변경</button>
+      <button class="버튼 로그아웃" onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
 
-<div class="경유지목록">
-  <h3>📍 경유지 목록</h3>
-  <div id="경유지목록내용">
-    <div id="안내메시지">위에서 날짜와 기사를 선택해주세요</div>
+  <div class="필터영역">
+    <div class="필터그룹">
+      <label>📅 날짜</label>
+      <select id="sel날짜" onchange="날짜변경()"><option>불러오는 중...</option></select>
+    </div>
+    <div class="필터그룹">
+      <label>🏢 부서명</label>
+      <select id="sel부서" onchange="부서변경()"><option value="전체">전체</option></select>
+    </div>
+    <div class="필터그룹">
+      <label>📦 배송처</label>
+      <select id="sel배송처" onchange="배송처변경()"><option value="전체">전체</option></select>
+    </div>
+    <div class="필터그룹">
+      <label>🚛 차량유형</label>
+      <select id="sel차량" onchange="차량변경()"><option value="전체">전체</option></select>
+    </div>
+    <div class="필터그룹">
+      <label>👤 기사</label>
+      <select id="sel기사" onchange="기사변경()"><option>기사 선택</option></select>
+    </div>
+  </div>
+
+  <div class="카드묶음">
+    <div class="카드">
+      <div class="숫자" id="카드거리">-</div>
+      <div class="설명">운행거리 (km)</div>
+      <div class="출처">Directions API</div>
+    </div>
+    <div class="카드">
+      <div class="숫자" id="카드시간">-</div>
+      <div class="설명">운행시간 (분)</div>
+      <div class="출처">Directions API</div>
+    </div>
+    <div class="카드">
+      <div class="숫자" id="카드건수">-</div>
+      <div class="설명">총 건수</div>
+    </div>
+    <div class="카드 빨강">
+      <div class="숫자" id="카드실패">-</div>
+      <div class="설명">실패 건</div>
+    </div>
+    <div class="카드 주황">
+      <div class="숫자" id="카드유류비">-</div>
+      <div class="설명">유류비 (원)</div>
+      <div class="출처">Directions API</div>
+    </div>
+    <div class="카드 주황">
+      <div class="숫자" id="카드톨비">-</div>
+      <div class="설명">톨비 (원)</div>
+      <div class="출처">Directions API</div>
+    </div>
+    <div class="카드 초록">
+      <div class="숫자" id="카드속도">-</div>
+      <div class="설명">평균속도 (km/h)</div>
+      <div class="출처">Directions API</div>
+    </div>
+  </div>
+
+  <div class="로딩바" id="로딩바">🔍 네이버 Directions API로 실제 경로 계산 중...</div>
+  <div id="지도"></div>
+
+  <div class="경유지목록">
+    <h3>📍 경유지 목록</h3>
+    <div id="경유지목록내용">
+      <div id="안내메시지">위에서 날짜와 기사를 선택해주세요</div>
+    </div>
   </div>
 </div>
 
 <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nti3kkmh2c"></script>
 <script>
 
-// ⭐ 여기에 설정값 입력
-const CLIENT_ID     = 'nti3kkmh2c';
-const 시트주소 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTs6k1Ky8Hdnrl2U5A242Vg6ZqBaQSrLGkDr2xf_yMuMflYc-dD_2-v-2wRmIsip32W087DXCx4ZRzu/pub?gid=0&single=true&output=csv';
+// ⭐ 설정값
+const CLIENT_ID = 'nti3kkmh2c';
+const 계정시트주소 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTs6k1Ky8Hdnrl2U5A242Vg6ZqBaQSrLGkDr2xf_yMuMflYc-dD_2-v-2wRmIsip32W087DXCx4ZRzu/pub?gid=1375354052&single=true&output=csv';
+const 데이터시트주소 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTs6k1Ky8Hdnrl2U5A242Vg6ZqBaQSrLGkDr2xf_yMuMflYc-dD_2-v-2wRmIsip32W087DXCx4ZRzu/pub?gid=0&single=true&output=csv';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3u_qkSOIjW3yQVVvOalqhkET1N2HndGzPfGmzT87T13T4an1xUGQ0gx9DGxAztPok/exec';
 
+let 계정목록 = [];
+let 현재사용자 = null;
 let 전체데이터 = [];
 let 지도객체 = null;
 let 마커들 = [];
@@ -167,7 +291,6 @@ function CSV파싱(text) {
   return rows;
 }
 
-// 좌표 파싱 (경도,위도 형식)
 function 좌표파싱(str) {
   if (!str?.trim()) return null;
   const [lngStr, latStr] = str.trim().split(',');
@@ -175,58 +298,182 @@ function 좌표파싱(str) {
   return (isNaN(lng) || isNaN(lat)) ? null : { lat, lng };
 }
 
-// 숫자 포맷
 function 숫자포맷(n) {
   if (n == null || n === '' || isNaN(Number(n))) return '-';
   return Number(n).toLocaleString();
 }
 
-// 데이터 불러오기
-fetch(시트주소).then(r => r.text()).then(csv => {
+// 계정 불러오기
+fetch(계정시트주소).then(r => r.text()).then(csv => {
   const rows = CSV파싱(csv);
   for (let i = 1; i < rows.length; i++) {
-    const v = rows[i];
-    if (!v[0] || !v[2]) continue;
-    const 경유원본 = v[15] || '';
-    전체데이터.push({
-      일자:      v[0].trim(),
-      기사명:    v[2].trim(),
-      부서명:    v[4].trim(),
-      배송처명:  v[6].trim(),
-      차량유형:  v[7].trim(),
-      시작:      v[13].trim(),
-      종료:      v[14].trim(),
-      경유목록:  경유원본 ? 경유원본.split('|').map(s => s.trim()).filter(s => s.includes(',')) : [],
-      총건수:    v[16] || '-',
-      실패건:    v[17] || '0',
+    if (!rows[i][0]) continue;
+    계정목록.push({
+      id: String(rows[i][0]).trim(),
+      pw: String(rows[i][1]).trim(),
+      권한: String(rows[i][2]).trim()
     });
   }
-
-  // 지도 초기화
-  지도객체 = new naver.maps.Map('지도', {
-    zoom: 8,
-    center: new naver.maps.LatLng(36.5, 127.8)
-  });
-
-  // 날짜 목록
-  const 날짜목록 = [...new Set(전체데이터.map(d => d.일자))].sort();
-  document.getElementById('sel날짜').innerHTML =
-    날짜목록.map(d => `<option value="${d}">${d}</option>`).join('');
-
-  날짜변경();
 });
 
-// 필터 공통
+// 로그인
+function 로그인() {
+  const id = document.getElementById('입력ID').value.trim();
+  const pw = document.getElementById('입력PW').value.trim();
+  const 계정 = 계정목록.find(a => a.id === id && a.pw === pw);
+
+  if (!계정) {
+    document.getElementById('로그인오류').style.display = 'block';
+    return;
+  }
+
+  현재사용자 = 계정;
+  document.getElementById('로그인오류').style.display = 'none';
+  document.getElementById('로그인화면').style.display = 'none';
+  document.getElementById('대시보드').style.display = 'block';
+  document.getElementById('사용자뱃지').textContent =
+    `${계정.id} (${계정.권한 === '전체' ? '마스터' : 계정.권한})`;
+
+  대시보드초기화();
+}
+
+function 로그아웃() {
+  현재사용자 = null;
+  document.getElementById('대시보드').style.display = 'none';
+  document.getElementById('로그인화면').style.display = 'flex';
+  document.getElementById('입력ID').value = '';
+  document.getElementById('입력PW').value = '';
+}
+
+// 비밀번호 변경
+function 비번모달열기() {
+  document.getElementById('현재비번').value = '';
+  document.getElementById('새비번').value = '';
+  document.getElementById('새비번확인').value = '';
+  document.getElementById('비번오류').style.display = 'none';
+  document.getElementById('비번모달').classList.add('열림');
+}
+
+function 비번모달닫기() {
+  document.getElementById('비번모달').classList.remove('열림');
+}
+
+async function 비번변경() {
+  const 현재 = document.getElementById('현재비번').value.trim();
+  const 새것 = document.getElementById('새비번').value.trim();
+  const 확인 = document.getElementById('새비번확인').value.trim();
+  const 오류el = document.getElementById('비번오류');
+
+  if (!현재 || !새것 || !확인) {
+    오류el.textContent = '❌ 모든 항목을 입력해주세요';
+    오류el.style.display = 'block'; return;
+  }
+  if (새것 !== 확인) {
+    오류el.textContent = '❌ 새 비밀번호가 일치하지 않습니다';
+    오류el.style.display = 'block'; return;
+  }
+  if (새것.length < 4) {
+    오류el.textContent = '❌ 비밀번호는 4자 이상이어야 합니다';
+    오류el.style.display = 'block'; return;
+  }
+
+  오류el.textContent = '⏳ 변경 중...';
+  오류el.style.display = 'block';
+  오류el.style.color = '#1a73e8';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'changePassword',
+        id: 현재사용자.id,
+        oldPassword: 현재,
+        newPassword: 새것
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      현재사용자.pw = 새것;
+      // 계정목록도 업데이트
+      const 계정 = 계정목록.find(a => a.id === 현재사용자.id);
+      if (계정) 계정.pw = 새것;
+
+      오류el.textContent = '✅ 비밀번호가 변경되었습니다!';
+      오류el.style.color = '#2e7d32';
+      setTimeout(() => 비번모달닫기(), 1500);
+    } else {
+      오류el.textContent = `❌ ${data.message}`;
+      오류el.style.color = '#e53935';
+    }
+  } catch(e) {
+    오류el.textContent = '❌ 변경 중 오류가 발생했습니다';
+    오류el.style.color = '#e53935';
+  }
+}
+
+// 권한에 따른 데이터 필터
+function 권한필터(데이터) {
+  if (!현재사용자 || 현재사용자.권한 === '전체') return 데이터;
+  const 허용목록 = 현재사용자.권한.split(',').map(s => s.trim());
+  return 데이터.filter(d =>
+    허용목록.some(허용 => d.부서명 === 허용 || d.배송처명 === 허용)
+  );
+}
+
+// 대시보드 초기화
+function 대시보드초기화() {
+  if (전체데이터.length > 0) {
+    날짜목록설정(); return;
+  }
+
+  fetch(데이터시트주소).then(r => r.text()).then(csv => {
+    const rows = CSV파싱(csv);
+    for (let i = 1; i < rows.length; i++) {
+      const v = rows[i];
+      if (!v[0] || !v[2]) continue;
+      const 경유원본 = v[15] || '';
+      전체데이터.push({
+        일자: v[0].trim(),
+        기사명: v[2].trim(),
+        부서명: v[4].trim(),
+        배송처명: v[6].trim(),
+        차량유형: v[7].trim(),
+        시작: v[13].trim(),
+        종료: v[14].trim(),
+        경유목록: 경유원본 ? 경유원본.split('|').map(s => s.trim()).filter(s => s.includes(',')) : [],
+        총건수: v[16] || '-',
+        실패건: v[17] || '0',
+      });
+    }
+
+    지도객체 = new naver.maps.Map('지도', {
+      zoom: 8, center: new naver.maps.LatLng(36.5, 127.8)
+    });
+
+    날짜목록설정();
+  });
+}
+
+function 날짜목록설정() {
+  const 권한데이터 = 권한필터(전체데이터);
+  const 날짜목록 = [...new Set(권한데이터.map(d => d.일자))].sort();
+  document.getElementById('sel날짜').innerHTML =
+    날짜목록.map(d => `<option value="${d}">${d}</option>`).join('');
+  날짜변경();
+}
+
+// 필터
 function 필터데이터() {
-  const 날짜    = document.getElementById('sel날짜').value;
-  const 부서    = document.getElementById('sel부서').value;
-  const 배송처  = document.getElementById('sel배송처').value;
-  const 차량    = document.getElementById('sel차량').value;
-  return 전체데이터.filter(d =>
+  const 날짜 = document.getElementById('sel날짜').value;
+  const 부서 = document.getElementById('sel부서').value;
+  const 배송처 = document.getElementById('sel배송처').value;
+  const 차량 = document.getElementById('sel차량').value;
+  return 권한필터(전체데이터).filter(d =>
     d.일자 === 날짜 &&
-    (부서   === '전체' || d.부서명   === 부서) &&
+    (부서 === '전체' || d.부서명 === 부서) &&
     (배송처 === '전체' || d.배송처명 === 배송처) &&
-    (차량   === '전체' || d.차량유형 === 차량)
+    (차량 === '전체' || d.차량유형 === 차량)
   );
 }
 
@@ -240,21 +487,18 @@ function 셀렉트갱신(id, 목록, 전체 = true) {
 
 function 날짜변경() {
   const 날짜 = document.getElementById('sel날짜').value;
-  const 해당 = 전체데이터.filter(d => d.일자 === 날짜);
+  const 해당 = 권한필터(전체데이터).filter(d => d.일자 === 날짜);
   셀렉트갱신('sel부서', [...new Set(해당.map(d => d.부서명))].sort());
   부서변경();
 }
-
 function 부서변경() {
   셀렉트갱신('sel배송처', [...new Set(필터데이터().map(d => d.배송처명))].sort());
   배송처변경();
 }
-
 function 배송처변경() {
   셀렉트갱신('sel차량', [...new Set(필터데이터().map(d => d.차량유형))].sort());
   차량변경();
 }
-
 function 차량변경() {
   셀렉트갱신('sel기사', [...new Set(필터데이터().map(d => d.기사명))].sort(), false);
   기사변경();
@@ -265,13 +509,11 @@ async function 기사변경() {
   const 행 = 필터데이터().find(d => d.기사명 === 기사);
   if (!행) return;
 
-  // 카드 기본값
   document.getElementById('카드건수').textContent = 행.총건수;
   document.getElementById('카드실패').textContent = 행.실패건;
   ['카드거리','카드시간','카드유류비','카드톨비','카드속도']
     .forEach(id => document.getElementById(id).textContent = '...');
 
-  // 마커/경로 초기화
   마커들.forEach(m => m.setMap(null)); 마커들 = [];
   if (폴리라인) { 폴리라인.setMap(null); 폴리라인 = null; }
 
@@ -281,18 +523,15 @@ async function 기사변경() {
 
   const 경유좌표들 = 행.경유목록.map(s => 좌표파싱(s)).filter(Boolean);
 
-  // 마커 찍기
   마커찍기(시작, '출발', '#2e7d32');
   경유좌표들.forEach((c, i) => 마커찍기(c, i + 1, '#1a73e8'));
   마커찍기(종료, '도착', '#e53935');
 
-  // 경유지 목록 표시
-  let html = `
-    <div class="경유지아이템">
-      <div class="뱃지 출발">출</div>
-      <div><b>출발지</b> — ${행.부서명}<br>
-      <span style="color:#888;font-size:12px">${행.시작}</span></div>
-    </div>`;
+  let html = `<div class="경유지아이템">
+    <div class="뱃지 출발">출</div>
+    <div><b>출발지</b> — ${행.부서명}<br>
+    <span style="color:#888;font-size:12px">${행.시작}</span></div>
+  </div>`;
   경유좌표들.forEach((_, i) => {
     html += `<div class="경유지아이템">
       <div class="뱃지 경유">${i + 1}</div>
@@ -307,7 +546,6 @@ async function 기사변경() {
   </div>`;
   document.getElementById('경유지목록내용').innerHTML = html;
 
-  // 지도 범위 조정
   const 모든 = [시작, ...경유좌표들, 종료];
   const 범위 = new naver.maps.LatLngBounds(
     new naver.maps.LatLng(시작.lat, 시작.lng),
@@ -316,7 +554,6 @@ async function 기사변경() {
   모든.forEach(c => 범위.extend(new naver.maps.LatLng(c.lat, c.lng)));
   지도객체.fitBounds(범위, { padding: 80 });
 
-  // 실제 도로 경로 계산
   document.getElementById('로딩바').style.display = 'block';
   await 경로계산(행);
   document.getElementById('로딩바').style.display = 'none';
@@ -335,7 +572,6 @@ function 마커찍기(좌표, 라벨, 색) {
 
 async function 경로계산(행) {
   const 경유배열 = 행.경유목록.filter(w => w.includes(','));
-
   try {
     const res = await fetch('/api/directions', {
       method: 'POST',
@@ -363,21 +599,20 @@ async function 경로계산(행) {
     });
 
     const s = 경로.summary || {};
-    const 거리m  = Number(s.distance) || 0;
+    const 거리m = Number(s.distance) || 0;
     const 시간ms = Number(s.duration) || 0;
-    document.getElementById('카드거리').textContent   = 거리m  > 0 ? (거리m / 1000).toFixed(1) : '-';
-    document.getElementById('카드시간').textContent   = 시간ms > 0 ? Math.round(시간ms / 60000) : '-';
-    document.getElementById('카드유류비').textContent  = 숫자포맷(s.fuelPrice);
-    document.getElementById('카드톨비').textContent   = 숫자포맷(s.tollFare);
-    document.getElementById('카드속도').textContent   = (거리m > 0 && 시간ms > 0)
+    document.getElementById('카드거리').textContent = 거리m > 0 ? (거리m / 1000).toFixed(1) : '-';
+    document.getElementById('카드시간').textContent = 시간ms > 0 ? Math.round(시간ms / 60000) : '-';
+    document.getElementById('카드유류비').textContent = 숫자포맷(s.fuelPrice);
+    document.getElementById('카드톨비').textContent = 숫자포맷(s.tollFare);
+    document.getElementById('카드속도').textContent = (거리m > 0 && 시간ms > 0)
       ? Math.round((거리m / 1000) / (시간ms / 3600000)) : '-';
-
   } catch(e) {
-    console.error('경로계산 오류:', e);
     ['카드거리','카드시간','카드유류비','카드톨비','카드속도']
       .forEach(id => document.getElementById(id).textContent = '-');
   }
 }
+
 </script>
 </body>
 </html>
